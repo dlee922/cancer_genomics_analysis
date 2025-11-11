@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.display import (
@@ -55,8 +56,24 @@ def load_raw_data():
 
     return mutations_df, clinical_sample_df, clinical_patient_df
 
+def extract_gene_symbols(mutations_df):
+    """
+    Extract gene symbols from the nested 'gene' column.
+    
+    Args:
+        mutations_df (pd.DataFrame): Raw mutations data
+        
+    Returns:
+        pd.DataFrame: mutations_df with new 'gene_symbol' column
+    """
 
-# ... rest of your functions ...
+    # gene example: "{'entrezGeneId': 18, 'hugoGeneSymbol': 'ABAT', 'type': 'protein-coding'}"
+
+    mutations_df['gene_symbol'] = mutations_df['gene'].apply(
+        lambda x: json.loads(x.replace("'", '"'))['hugoGeneSymbol'])
+
+
+
 
 
 # Main execution
@@ -64,6 +81,17 @@ if __name__ == "__main__":
     print_step(1, 7, "Loading raw data")
     mutations_df, clinical_sample_df, clinical_patient_df = load_raw_data()
     
+    # Save processed data
+    print("="*70)
+    print("Extracting Gene Symbols...")
+    print("="*70)
+
+    # Extract gene symbols from mutations dataframe
+    extract_gene_symbols(mutations_df)
+
+    mutations_df.to_csv('data/processed/mutations.csv', index=False)
+    print(f"✓ Saved: data/raw/mutations.csv ({len(mutations_df)} rows)")
+
     # print_step(2, 7, "Extracting gene symbols")
     # mutations_df = extract_gene_symbols(mutations_df)
     
