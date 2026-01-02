@@ -413,7 +413,7 @@ Data from: The Cancer Genome Atlas (TCGA) via cBioPortal
 
 **Daniel Lee**  
 MS Bioinformatics Student, Northeastern University  
-📧 lee.daniel1@northeastern.edu
+📧 lee.daniel1@northeastern.edu  
 🔗 [LinkedIn](https://www.linkedin.com/in/daniellee922)
 
 ---
