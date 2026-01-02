@@ -182,23 +182,23 @@ analysis:
 ### Generated Visualizations
 
 #### 1. Gene Frequency Bar Chart
-![Gene Frequency](outputs/figures/gene_frequency.png)
+![Gene Frequency](outputs/figures/example_gene_frequency.png)
 *Shows top 15 mutated genes and their frequencies*
 
 #### 2. TMB Distribution
-![TMB Distribution](outputs/figures/tmb_distribution.png)
+![TMB Distribution](outputs/figures/example_tmb_distribution.png)
 *Histogram with clinical cutoff at 10 mutations/Mb*
 
 #### 3. Oncoplot (Mutation Landscape)
-![Oncoplot](outputs/figures/oncoplot.png)
+![Oncoplot](outputs/figures/example_oncoplot.png)
 *Heatmap showing which genes are mutated in which samples*
 
 #### 4. Kaplan-Meier Survival Curves
-![Survival Curves](outputs/figures/survival_curves.png)
+![Survival Curves](outputs/figures/example_survival_curves.png)
 *Compares survival between high and low TMB groups*
 
 #### 5. Interactive Dashboard
-![Interactive Dashboard](outputs/figures/interactive_dashboard.png)
+![Interactive Dashboard](outputs/figures/example_interactive_dashboard.html)
 *Plotly scatter plot - open the .html file to interact!*
 
 ### Processed Data Files
@@ -387,10 +387,10 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 If you use this pipeline in your research, please cite:
 ```bibtex
 @software{cancer_genomics_pipeline,
-  author = {Your Name},
+  author = {Daniel Lee},
   title = {Cancer Genomics Analysis Pipeline},
   year = {2026},
-  url = {https://github.com/YOUR_USERNAME/cancer-genomics-analysis}
+  url = {https://github.com/dlee922/cancer-genomics-analysis}
 }
 ```
 
@@ -411,11 +411,10 @@ Data from: The Cancer Genome Atlas (TCGA) via cBioPortal
 
 ## 📧 Contact
 
-**Your Name**  
+**Daniel Lee**  
 MS Bioinformatics Student, Northeastern University  
-📧 your.email@northeastern.edu  
-🔗 [LinkedIn](https://linkedin.com/in/yourprofile)  
-🔗 [Portfolio](https://yourportfolio.com)
+📧 lee.daniel1@northeastern.edu
+🔗 [LinkedIn](https://www.linkedin.com/in/daniellee922)
 
 ---
 
