@@ -17,10 +17,6 @@ from utils.display import print_header
 os.makedirs('data/raw', exist_ok=True)
 os.makedirs('data/processed', exist_ok=True)
 
-print("="*70)
-print("TCGA LUAD Data Download from cBioPortal")
-print("="*70)
-
 # cBioPortal API base URL
 BASE_URL = "https://www.cbioportal.org/api"
 
