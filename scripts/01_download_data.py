@@ -7,6 +7,9 @@ import json
 import pandas as pd
 import os
 from time import sleep
+import yaml
+
+from utils.display import print_header
 
 # create data directories if they do not exist
 os.makedirs('data/raw', exist_ok=True)
@@ -19,10 +22,15 @@ print("="*70)
 # cBioPortal API base URL
 BASE_URL = "https://www.cbioportal.org/api"
 
-# Study identifier for TCGA Lung Adenocarcinoma
-STUDY_ID = "luad_tcga_pan_can_atlas_2018"
-MOLECULAR_PROFILE_ID = "luad_tcga_pan_can_atlas_2018_mutations"
-SAMPLE_LIST_ID = "luad_tcga_pan_can_atlas_2018_sequenced"
+# Load configuration
+with open('config.yaml', 'r') as f:
+    config = yaml.safe_load(f)
+
+STUDY_ID = config['study']['study_id']
+MOLECULAR_PROFILE_ID = f"{STUDY_ID}_mutations"
+SAMPLE_LIST_ID = f"{STUDY_ID}_sequenced"
+
+print_header(f"TCGA {config['study']['cancer_abbreviation']} Data Download from cBioPortal")
 
 def get_mutations_by_sample_list(MOLECULAR_PROFILE_ID, sample_list_id):
     """Download mutations using sample list ID"""

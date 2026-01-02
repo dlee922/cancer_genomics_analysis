@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  cancer-genomics:
+    build: .
+    container_name: cancer-genomics-pipeline
+    volumes:
+      # Mount data and output directories to persist results
+      - ./data:/app/data
+      - ./outputs:/app/outputs
+      - ./config.yaml:/app/config.yaml
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
