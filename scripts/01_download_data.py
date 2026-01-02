@@ -8,7 +8,9 @@ import pandas as pd
 import os
 from time import sleep
 import yaml
+import sys
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.display import print_header
 
 # create data directories if they do not exist
