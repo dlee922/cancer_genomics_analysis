@@ -169,7 +169,7 @@ def plot_tmb_distribution(tmb_df):
     # clinical cutoff
     TMB_CUTOFF = 10
     
-    # TODO: Count high TMB samples
+    # Count high TMB samples
     high_tmb_count = (tmb_df['tmb'] >= TMB_CUTOFF).sum()
     total_samples = len(tmb_df)
     high_tmb_percentage = (high_tmb_count / total_samples) * 100
@@ -383,38 +383,277 @@ def plot_survival_curves(survival_df, tmb_df):
     """
     print_info("Creating Kaplan-Meier survival curves...")
     
-    # TODO: Extract patientId from sampleId
+    # Extract patientId from sampleId
     # TCGA format: "TCGA-05-4244-01" → patient is "TCGA-05-4244" (first 12 chars)
     # HINT: Use .str[:12] to get first 12 characters
-    # tmb_with_patient = tmb_df.copy()
-    # tmb_with_patient['patientId'] = tmb_with_patient['sampleId'].str[:12]
+    tmb_with_patient = tmb_df.copy()
+    tmb_with_patient['patientId'] = tmb_with_patient['sampleId'].str[:12]
     
-    # TODO: Merge with survival data
+    # Merge with survival data
     # HINT: Use pd.merge() or .merge()
     # Keep only patients with both TMB and survival data (inner join)
-    # survival_tmb = survival_df.merge(tmb_with_patient[['patientId', 'tmb']], on='patientId', how='inner')
+    survival_tmb = survival_df.merge(tmb_with_patient[['patientId', 'tmb']], on='patientId', how='inner')
     
-    # TODO: Define TMB groups
-    # TMB_CUTOFF = 10
-    # survival_tmb['tmb_group'] = survival_tmb['tmb'].apply(
-    #     lambda x: 'High TMB (≥10)' if x >= TMB_CUTOFF else 'Low TMB (<10)'
-    # )
+    # Define TMB groups
+    TMB_CUTOFF = 10
+    survival_tmb['tmb_group'] = survival_tmb['tmb'].apply(
+        lambda x: 'High TMB (≥10)' if x >= TMB_CUTOFF else 'Low TMB (<10)'
+    )
     
-    # TODO: Count patients in each group
-    # high_count = (survival_tmb['tmb_group'] == 'High TMB (≥10)').sum()
-    # low_count = (survival_tmb['tmb_group'] == 'Low TMB (<10)').sum()
+    # Count patients in each group
+    high_count = (survival_tmb['tmb_group'] == 'High TMB (≥10)').sum()
+    low_count = (survival_tmb['tmb_group'] == 'Low TMB (<10)').sum()
     
-    # TODO: Print group info
-    # print_info(f"High TMB group: {high_count} patients")
-    # print_info(f"Low TMB group: {low_count} patients")
-    # print_info(f"Total patients with complete data: {len(survival_tmb)}")
+    # Print group info
+    print_info(f"High TMB group: {high_count} patients")
+    print_info(f"Low TMB group: {low_count} patients")
+    print_info(f"Total patients with complete data: {len(survival_tmb)}")
     
-    # I'LL PROVIDE THE KAPLAN-MEIER PLOTTING CODE
     
-    pass
+    # KAPLAN-MEIER PLOTTING CODE BELOW
+        # Create figure
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    # Separate data by TMB group
+    high_tmb_data = survival_tmb[survival_tmb['tmb_group'] == 'High TMB (≥10)']
+    low_tmb_data = survival_tmb[survival_tmb['tmb_group'] == 'Low TMB (<10)']
+    
+    # Create Kaplan-Meier fitter objects for each group
+    kmf_high = KaplanMeierFitter()
+    kmf_low = KaplanMeierFitter()
+    
+    # Fit the models
+    # T = time, E = event (1=death, 0=censored), label = name for legend
+    kmf_high.fit(durations=high_tmb_data['time'], 
+                 event_observed=high_tmb_data['event'],
+                 label=f'High TMB (≥{TMB_CUTOFF} mut/Mb, n={high_count})')
+    
+    kmf_low.fit(durations=low_tmb_data['time'],
+                event_observed=low_tmb_data['event'],
+                label=f'Low TMB (<{TMB_CUTOFF} mut/Mb, n={low_count})')
+    
+    # Plot the survival curves
+    kmf_high.plot_survival_function(ax=ax, color='red', linewidth=2.5, ci_show=True)
+    kmf_low.plot_survival_function(ax=ax, color='blue', linewidth=2.5, ci_show=True)
+    
+    # Perform log-rank test to check if difference is statistically significant
+    # This compares the two survival curves
+    from lifelines.statistics import logrank_test
+    results = logrank_test(durations_A=high_tmb_data['time'],
+                          durations_B=low_tmb_data['time'],
+                          event_observed_A=high_tmb_data['event'],
+                          event_observed_B=low_tmb_data['event'])
+    
+    p_value = results.p_value
+    print_info(f"Log-rank test p-value: {p_value:.4f}")
+    
+    # Interpret p-value
+    if p_value < 0.05:
+        print_info("Survival difference is statistically significant (p < 0.05)")
+        significance = "Significant difference"
+    else:
+        print_info("Survival difference is NOT statistically significant (p ≥ 0.05)")
+        significance = "No significant difference"
+    
+    # Calculate median survival times
+    median_high = kmf_high.median_survival_time_
+    median_low = kmf_low.median_survival_time_
+    print_info(f"Median survival - High TMB: {median_high:.1f} months")
+    print_info(f"Median survival - Low TMB: {median_low:.1f} months")
+    
+    # Add labels and title
+    ax.set_xlabel('Time (months)', fontsize=13, fontweight='bold')
+    ax.set_ylabel('Survival Probability', fontsize=13, fontweight='bold')
+    ax.set_title('Kaplan-Meier Survival Curves: High vs Low TMB in LUAD\n' + 
+                 f'Log-rank test: p = {p_value:.4f} ({significance})',
+                 fontsize=14, fontweight='bold', pad=20)
+    
+    # Customize legend
+    ax.legend(loc='best', fontsize=11, framealpha=0.9)
+    
+    # Add grid
+    ax.grid(alpha=0.3, linestyle='--')
+    
+    # Set y-axis to 0-1 (probability scale)
+    ax.set_ylim([0, 1.05])
+    
+    # Add text box with statistics
+    stats_text = (f'Median Survival:\n'
+                 f'High TMB: {median_high:.1f} mo\n'
+                 f'Low TMB: {median_low:.1f} mo\n'
+                 f'p-value: {p_value:.4f}')
+    
+    ax.text(0.98, 0.02, stats_text,
+            transform=ax.transAxes,
+            verticalalignment='bottom',
+            horizontalalignment='right',
+            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
+            fontsize=10, family='monospace')
+    
+    # Clean up
+    plt.tight_layout()
+    
+    # Save
+    output_path = f'{OUTPUT_DIR}/survival_curves.png'
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print_success(f"Saved: {output_path}")
+    
+    plt.close()
 
 def create_interactive_dashboard(integrated_df):
-    pass
+    """
+    Create an interactive Plotly scatter plot: TMB vs Survival Time.
+    
+    BIOLOGICAL CONTEXT:
+    -------------------
+    This explores the relationship between TMB and survival.
+    Interactive lets viewers explore individual samples.
+    
+    Args:
+        integrated_df (pd.DataFrame): Integrated dataset with TMB + survival
+    """
+    print_info("Creating interactive TMB dashboard...")
+    
+    # Filter to samples with survival data
+    plot_df = integrated_df[integrated_df['time'].notna()].copy()
+    
+    # Create readable status labels
+    plot_df['status_label'] = plot_df['event'].map({1: 'Deceased', 0: 'Alive'})
+    
+    # Print summary
+    print_info(f"Plotting {len(plot_df)} samples with complete data")
+    deceased_count = (plot_df['event'] == 1).sum()
+    alive_count = (plot_df['event'] == 0).sum()
+    print_info(f"  Deceased: {deceased_count}, Alive/Censored: {alive_count}")
+    
+    # PLOTLY INTERACTIVE PLOTTING CODE (I'm providing this)
+    # ======================================================
+    
+    # Create the interactive scatter plot
+    fig = px.scatter(
+        plot_df,
+        x='tmb',
+        y='time',
+        color='status_label',
+        color_discrete_map={'Deceased': '#e74c3c', 'Alive': '#3498db'},  # Red and blue
+        title='Interactive Dashboard: TMB vs Survival Time in LUAD',
+        labels={
+            'tmb': 'Tumor Mutation Burden (mutations/Mb)',
+            'time': 'Survival Time (months)',
+            'status_label': 'Status'
+        },
+        hover_data={
+            'sampleId': True,
+            'tmb': ':.2f',  # Format to 2 decimals
+            'time': ':.1f',
+            'mutation_count': True,
+            'status_label': True
+        },
+        size_max=10,
+        opacity=0.7
+    )
+    
+    # Add trendline to show correlation
+    # This adds a regression line
+    from scipy import stats
+    
+    # Calculate correlation for each group
+    deceased_data = plot_df[plot_df['event'] == 1]
+    alive_data = plot_df[plot_df['event'] == 0]
+    
+    if len(deceased_data) > 1:
+        slope_d, intercept_d, r_d, p_d, _ = stats.linregress(deceased_data['tmb'], deceased_data['time'])
+        print_info(f"Correlation (Deceased): r={r_d:.3f}, p={p_d:.4f}")
+    
+    if len(alive_data) > 1:
+        slope_a, intercept_a, r_a, p_a, _ = stats.linregress(alive_data['tmb'], alive_data['time'])
+        print_info(f"Correlation (Alive): r={r_a:.3f}, p={p_a:.4f}")
+    
+    # Add reference lines
+    # Vertical line at TMB=10 (clinical cutoff)
+    fig.add_vline(x=10, line_dash="dash", line_color="gray", 
+                  annotation_text="Clinical Cutoff (10 mut/Mb)",
+                  annotation_position="top")
+    
+    # Horizontal line at median survival
+    median_survival = plot_df['time'].median()
+    fig.add_hline(y=median_survival, line_dash="dash", line_color="gray",
+                  annotation_text=f"Median Survival ({median_survival:.1f} mo)",
+                  annotation_position="right")
+    
+    # Update layout for better appearance
+    fig.update_layout(
+        width=1200,
+        height=700,
+        font=dict(size=12),
+        title_font_size=16,
+        title_x=0.5,  # Center title
+        hovermode='closest',
+        template='plotly_white',
+        legend=dict(
+            title_text='Patient Status',
+            orientation="v",
+            yanchor="top",
+            y=0.99,
+            xanchor="right",
+            x=0.99,
+            bgcolor="rgba(255, 255, 255, 0.8)",
+            bordercolor="gray",
+            borderwidth=1
+        )
+    )
+    
+    # Update axes
+    fig.update_xaxes(
+        title_font_size=14,
+        gridcolor='lightgray',
+        showgrid=True,
+        zeroline=False
+    )
+    
+    fig.update_yaxes(
+        title_font_size=14,
+        gridcolor='lightgray',
+        showgrid=True,
+        zeroline=False
+    )
+    
+    # Add annotations with statistics
+    stats_text = (
+        f"Total Samples: {len(plot_df)}<br>"
+        f"Deceased: {deceased_count} ({deceased_count/len(plot_df)*100:.1f}%)<br>"
+        f"Alive: {alive_count} ({alive_count/len(plot_df)*100:.1f}%)<br>"
+        f"Mean TMB: {plot_df['tmb'].mean():.2f} mut/Mb<br>"
+        f"Median Survival: {median_survival:.1f} months"
+    )
+    
+    fig.add_annotation(
+        text=stats_text,
+        xref="paper", yref="paper",
+        x=0.02, y=0.98,
+        showarrow=False,
+        bgcolor="rgba(255, 255, 255, 0.9)",
+        bordercolor="gray",
+        borderwidth=1,
+        borderpad=10,
+        align="left",
+        font=dict(size=11, family="monospace")
+    )
+    
+    # Save as interactive HTML
+    output_path = f'{OUTPUT_DIR}/interactive_dashboard.html'
+    fig.write_html(output_path)
+    print_success(f"Saved: {output_path}")
+    print_info("Open this file in a web browser to interact with the plot!")
+    
+    # Optionally save as static PNG too
+    try:
+        # Requires kaleido: pip install kaleido
+        static_path = f'{OUTPUT_DIR}/interactive_dashboard.png'
+        fig.write_image(static_path, width=1200, height=700)
+        print_success(f"Also saved static version: {static_path}")
+    except Exception as e:
+        print_info("(Static PNG not saved - install kaleido for this feature)")
 
 
 # Main execution
@@ -434,8 +673,17 @@ if __name__ == "__main__":
     print_step(4, 6, "Creating oncoplot")
     plot_oncoplot(mutation_matrix, top_genes_df)
     
-    # print_step(5, 6, "Creating survival curves")
-    # plot_survival_curves(survival_df, tmb_df)
+    print_step(5, 6, "Creating survival curves")
+    plot_survival_curves(survival_df, tmb_df)
     
-    # print_step(6, 6, "Creating interactive dashboard")
-    # create_interactive_dashboard(integrated_df)
+    print_step(6, 6, "Creating interactive dashboard")
+    create_interactive_dashboard(integrated_df)
+
+    print_header("All Visualizations Complete!")
+    print_success(f"All figures saved to: {OUTPUT_DIR}/")
+    print_info("\nGenerated files:")
+    print_info("  1. gene_frequency.png")
+    print_info("  2. tmb_distribution.png")
+    print_info("  3. oncoplot.png")
+    print_info("  4. survival_curves.png")
+    print_info("  5. interactive_dashboard.html (open in browser!)")
