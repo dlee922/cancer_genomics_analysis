@@ -198,7 +198,7 @@ analysis:
 *Compares survival between high and low TMB groups*
 
 #### 5. Interactive Dashboard
-![Interactive Dashboard](outputs/figures/example_interactive_dashboard.html)
+![Interactive Dashboard](outputs/figures/interactive_dashboard.html)
 *Plotly scatter plot - open the .html file to interact!*
 
 ### Processed Data Files
