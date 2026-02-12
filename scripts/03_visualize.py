@@ -68,33 +68,21 @@ def load_processed_data():
 
 def plot_gene_frequency(top_genes_df):
     """
-    Create a horizontal bar chart of top mutated genes.
+    Creates a horizontal bar chart of top mutated genes.
 
-    BIOLOGICAL CONTEXT:
-    -------------------
-    Shows the "mutation frequency" - what percentage of patients have 
-    mutations in each gene. High frequency = likely driver gene.
-    
-    YOUR TASK:
-    ----------
-    1. Sort top_genes_df by 'percentage' in descending order
-    2. Take the top 15 genes (for visual clarity)
-    3. Extract gene names and percentages as lists for plotting
-    4. Print what you're plotting (e.g., "Plotting 15 genes...")
-    
     Args:
         top_genes_df (pd.DataFrame): Top mutated genes with frequencies
     """
     print_info("Creating gene frequency bar chart...")
 
-    # sort genes by percentage (frequency) and descending order 
+    # Sort genes by percentage (frequency) and descending order 
     sorted_genes = top_genes_df.sort_values('percentage', ascending=False)
 
-    # grabbing only the top 15 genes so the bar chart is not humungous
+    # Grabbing only the top 15 genes so the bar chart is not humungous
     # change based on spefications
     plot_data = sorted_genes.head(15)
     
-    # prep data for matplotlib
+    # Prep data for matplotlib
     genes = plot_data['gene_symbol'].tolist()
     percentages = plot_data['percentage'].tolist()
 
@@ -104,11 +92,10 @@ def plot_gene_frequency(top_genes_df):
     fig, ax = plt.subplots(figsize=(10, 8))
 
     # Create horizontal bar chart
-    # We reverse the order so highest is at top
+    # Reverse the order so highest is at top
     y_positions = np.arange(len(genes))
     bars = ax.barh(y_positions, percentages[::-1], color='steelblue', edgecolor='navy', linewidth=1.2)
 
-    # Customize the plot
     ax.set_yticks(y_positions)
     ax.set_yticklabels(genes[::-1], fontsize=11)  # Reverse to match bars
     ax.set_xlabel('Percentage of Samples Mutated (%)', fontsize=12, fontweight='bold')
@@ -117,12 +104,11 @@ def plot_gene_frequency(top_genes_df):
     
     # Add percentage labels on the bars
     for i, (bar, pct) in enumerate(zip(bars, percentages[::-1])):
-        # function arguments: (x-coord, y-coord, text to display, etc.)
         ax.text(pct + 1, bar.get_y() + bar.get_height()/2, 
                 f'{pct:.1f}%', 
                 va='center', fontsize=10, fontweight='bold')
     
-    # Add grid for easier reading
+    # Add grid to read easier
     ax.grid(axis='x', alpha=0.3, linestyle='--')
     ax.set_axisbelow(True)
     
@@ -140,28 +126,13 @@ def plot_gene_frequency(top_genes_df):
 
 def plot_tmb_distribution(tmb_df):
     """
-    Create a histogram showing TMB distribution with clinical cutoffs.
-    
-    BIOLOGICAL CONTEXT:
-    -------------------
-    TMB is used clinically to predict immunotherapy response:
-    - Low TMB (< 10 mut/Mb): Typical response
-    - High TMB (≥ 10 mut/Mb): Better response to checkpoint inhibitors
-    
-    YOUR TASK:
-    ----------
-    1. Calculate summary statistics: mean, median, std deviation
-    2. Define the clinical cutoff (10 mutations/Mb)
-    3. Count how many samples are "high TMB" (≥ 10)
-    4. Calculate percentage of high TMB samples
-    5. Print these statistics
+    Creates a histogram showing TMB distribution with clinical cutoffs.
     
     Args:
         tmb_df (pd.DataFrame): TMB data with 'tmb' column
     """
     print_info("Creating TMB distribution plot...")
-    
-    # HINT: Use .mean(), .median(), .std() on tmb_df['tmb']
+
     mean_tmb = tmb_df['tmb'].mean()
     median_tmb = tmb_df['tmb'].median()
     std_tmb = tmb_df['tmb'].std()
@@ -182,9 +153,6 @@ def plot_tmb_distribution(tmb_df):
     fig, ax = plt.subplots(figsize=(12, 7))
     
     # Create histogram
-    # bins=30 means split the data into 30 bins
-    # edgecolor makes bars stand out
-    # alpha is transparency (0-1)
     n, bins, patches = ax.hist(tmb_df['tmb'], bins=30, 
                                 color='skyblue', edgecolor='navy', 
                                 alpha=0.7, linewidth=1.2)
@@ -238,27 +206,7 @@ def plot_tmb_distribution(tmb_df):
 
 def plot_oncoplot(mutation_matrix, top_genes_df):
     """
-    Create an oncoplot (heatmap) showing mutation patterns.
-    
-    BIOLOGICAL CONTEXT:
-    -------------------
-    The oncoplot is THE signature visualization in cancer genomics.
-    - Rows = samples (patients)
-    - Columns = genes
-    - Blue = mutated, White = wild-type (normal)
-    
-    Shows patterns like:
-    - TP53 + KRAS often mutated together (co-occurrence)
-    - EGFR + KRAS rarely both mutated (mutual exclusivity)
-    
-    YOUR TASK:
-    ----------
-    1. Select top 15 genes (for visual clarity, 20 is too crowded)
-    2. Filter mutation_matrix to only include these genes
-    3. Sort samples by total mutation count (most mutated on top)
-       HINT: mutation_matrix.sum(axis=1) counts mutations per sample
-    4. Make sure genes are ordered by frequency (most mutated on left)
-    5. Print matrix dimensions
+    Creates an oncoplot (heatmap) showing mutation patterns.
     
     Args:
         mutation_matrix (pd.DataFrame): Binary mutation matrix (517×20)
@@ -273,20 +221,18 @@ def plot_oncoplot(mutation_matrix, top_genes_df):
     plot_matrix = mutation_matrix[top_15_genes]
     
     # sort samples by mutation count (most mutated samples on top)
-    sample_mutation_counts = plot_matrix.sum(axis=1)  # axis=1 means sum across columns
+    sample_mutation_counts = plot_matrix.sum(axis=1)  
     sorted_samples = sample_mutation_counts.sort_values(ascending=False).index
-    plot_matrix = plot_matrix.loc[sorted_samples]  # Reorder rows
+    plot_matrix = plot_matrix.loc[sorted_samples] 
     
     # print info about what we're plotting
     print_info(f"Plotting {plot_matrix.shape[0]} samples × {plot_matrix.shape[1]} genes")
-    print_info(f"Genes: {', '.join(top_15_genes[:5])}...")  # Show first 5
+    print_info(f"Genes: {', '.join(top_15_genes[:5])}...")
     
     # Create figure with subplots
-    # We'll have main heatmap + gene frequency bars on top
     fig = plt.figure(figsize=(14, 10))
     
     # Create grid for layout: [gene bars, heatmap]
-    # height_ratios controls relative heights
     gs = fig.add_gridspec(2, 1, height_ratios=[1, 10], hspace=0.05)
     
     # Top subplot: gene frequency bars
@@ -295,17 +241,14 @@ def plot_oncoplot(mutation_matrix, top_genes_df):
     ax_genes.bar(range(len(top_15_genes)), gene_freqs, color='coral', edgecolor='darkred')
     ax_genes.set_xlim(-0.5, len(top_15_genes) - 0.5)
     ax_genes.set_ylabel('Frequency\n(%)', fontsize=10, fontweight='bold')
-    ax_genes.set_xticks([])  # No x-axis labels here
+    ax_genes.set_xticks([])
     ax_genes.spines['bottom'].set_visible(False)
     ax_genes.grid(axis='y', alpha=0.3)
     
     # Bottom subplot: main heatmap
     ax_heatmap = fig.add_subplot(gs[1])
     
-    # Create the heatmap using seaborn
-    # cmap: color map (white=0, blue=1)
-    # cbar_kws: customize the color bar
-    # Create the heatmap using seaborn
+    # Create the heatmap
     sns.heatmap(plot_matrix, 
                 cmap=['#f5f5f5', 'steelblue'],  # Very light gray + blue
                 cbar_kws={'label': 'Mutation Status', 
@@ -360,23 +303,6 @@ def plot_survival_curves(survival_df, tmb_df):
     """
     Create Kaplan-Meier survival curves comparing high vs low TMB.
     
-    BIOLOGICAL CONTEXT:
-    -------------------
-    Kaplan-Meier curves show survival probability over time.
-    We're asking: "Do patients with high TMB live longer or shorter?"
-    
-    High TMB might mean:
-    - Better immunotherapy response → longer survival
-    - OR more aggressive tumor → shorter survival
-    
-    YOUR TASK:
-    ----------
-    1. Extract patientId from sampleId in tmb_df (first 12 characters)
-    2. Merge survival_df with tmb_df on patientId
-    3. Define TMB groups: High (≥10) vs Low (<10)
-    4. Count patients in each group
-    5. Print group sizes
-    
     Args:
         survival_df (pd.DataFrame): Survival data (patientId, time, event)
         tmb_df (pd.DataFrame): TMB data (sampleId, mutation_count, tmb)
@@ -385,12 +311,10 @@ def plot_survival_curves(survival_df, tmb_df):
     
     # Extract patientId from sampleId
     # TCGA format: "TCGA-05-4244-01" → patient is "TCGA-05-4244" (first 12 chars)
-    # HINT: Use .str[:12] to get first 12 characters
     tmb_with_patient = tmb_df.copy()
     tmb_with_patient['patientId'] = tmb_with_patient['sampleId'].str[:12]
     
     # Merge with survival data
-    # HINT: Use pd.merge() or .merge()
     # Keep only patients with both TMB and survival data (inner join)
     survival_tmb = survival_df.merge(tmb_with_patient[['patientId', 'tmb']], on='patientId', how='inner')
     
@@ -409,9 +333,7 @@ def plot_survival_curves(survival_df, tmb_df):
     print_info(f"Low TMB group: {low_count} patients")
     print_info(f"Total patients with complete data: {len(survival_tmb)}")
     
-    
-    # KAPLAN-MEIER PLOTTING CODE BELOW
-        # Create figure
+    # Create figure
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Separate data by TMB group
@@ -437,7 +359,7 @@ def plot_survival_curves(survival_df, tmb_df):
     kmf_low.plot_survival_function(ax=ax, color='blue', linewidth=2.5, ci_show=True)
     
     # Perform log-rank test to check if difference is statistically significant
-    # This compares the two survival curves
+    # Compares the two survival curves
     from lifelines.statistics import logrank_test
     results = logrank_test(durations_A=high_tmb_data['time'],
                           durations_B=low_tmb_data['time'],
@@ -504,11 +426,6 @@ def create_interactive_dashboard(integrated_df):
     """
     Create an interactive Plotly scatter plot: TMB vs Survival Time.
     
-    BIOLOGICAL CONTEXT:
-    -------------------
-    This explores the relationship between TMB and survival.
-    Interactive lets viewers explore individual samples.
-    
     Args:
         integrated_df (pd.DataFrame): Integrated dataset with TMB + survival
     """
@@ -526,16 +443,13 @@ def create_interactive_dashboard(integrated_df):
     alive_count = (plot_df['event'] == 0).sum()
     print_info(f"  Deceased: {deceased_count}, Alive/Censored: {alive_count}")
     
-    # PLOTLY INTERACTIVE PLOTTING CODE (I'm providing this)
-    # ======================================================
-    
     # Create the interactive scatter plot
     fig = px.scatter(
         plot_df,
         x='tmb',
         y='time',
         color='status_label',
-        color_discrete_map={'Deceased': '#e74c3c', 'Alive': '#3498db'},  # Red and blue
+        color_discrete_map={'Deceased': '#e74c3c', 'Alive': '#3498db'},
         title='Interactive Dashboard: TMB vs Survival Time in LUAD',
         labels={
             'tmb': 'Tumor Mutation Burden (mutations/Mb)',
@@ -544,7 +458,7 @@ def create_interactive_dashboard(integrated_df):
         },
         hover_data={
             'sampleId': True,
-            'tmb': ':.2f',  # Format to 2 decimals
+            'tmb': ':.2f',
             'time': ':.1f',
             'mutation_count': True,
             'status_label': True
@@ -554,7 +468,6 @@ def create_interactive_dashboard(integrated_df):
     )
     
     # Add trendline to show correlation
-    # This adds a regression line
     from scipy import stats
     
     # Calculate correlation for each group

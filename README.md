@@ -1,4 +1,4 @@
-# Cancer Genomics Analysis Pipeline 🧬
+# Cancer Genomics Analysis Pipeline
 
 A comprehensive bioinformatics pipeline for analyzing TCGA cancer mutation data, calculating tumor mutation burden (TMB), and generating publication-quality visualizations.
 
@@ -7,7 +7,7 @@ A comprehensive bioinformatics pipeline for analyzing TCGA cancer mutation data,
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
@@ -24,7 +24,7 @@ A comprehensive bioinformatics pipeline for analyzing TCGA cancer mutation data,
 
 ---
 
-## 🔬 Overview
+## Overview
 
 This pipeline downloads and analyzes cancer genomics data from [TCGA (The Cancer Genome Atlas)](https://www.cancer.gov/tcga) via [cBioPortal](https://www.cbioportal.org/). It performs comprehensive mutation analysis, calculates clinically-relevant biomarkers, and generates professional visualizations.
 
@@ -39,15 +39,15 @@ This pipeline downloads and analyzes cancer genomics data from [TCGA (The Cancer
 
 ---
 
-## ✨ Features
+## Features
 
 ### Data Processing
-- ✅ Downloads mutation data from cBioPortal API
-- ✅ Extracts clinical and survival information
-- ✅ Calculates Tumor Mutation Burden (TMB)
-- ✅ Identifies top mutated genes
-- ✅ Creates binary mutation matrices
-- ✅ Integrates multi-modal data
+- Downloads mutation data from cBioPortal API
+- Extracts clinical and survival information
+- Calculates Tumor Mutation Burden (TMB)
+- Identifies top mutated genes
+- Creates binary mutation matrices
+- Integrates multi-modal data
 
 ### Visualizations
 1. **Gene Frequency Bar Chart** - Most commonly mutated genes
@@ -64,7 +64,7 @@ This pipeline downloads and analyzes cancer genomics data from [TCGA (The Cancer
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### Option 1: Local Installation (Conda - Recommended)
 ```bash
@@ -136,7 +136,7 @@ All results saved to:
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 Edit `config.yaml` to analyze different cancer types:
 ```yaml
@@ -152,7 +152,7 @@ analysis:
 
 ---
 
-## 📊 Pipeline Steps
+## Pipeline Steps
 
 ### Script 1: Data Download (`01_download_data.py`)
 - Connects to cBioPortal API
@@ -177,7 +177,7 @@ analysis:
 
 ---
 
-## 📈 Output
+## Output
 
 ### Generated Visualizations
 
@@ -210,7 +210,7 @@ analysis:
 
 ---
 
-## 🔄 Analyzing Different Cancer Types
+## Analyzing Different Cancer Types
 
 This pipeline works with **any TCGA PanCancer Atlas study**!
 
@@ -322,7 +322,7 @@ cancer-genomics-analysis/
 
 ---
 
-## 💡 Examples
+## Examples
 
 ### Expected Results (LUAD)
 ```
@@ -365,7 +365,7 @@ Survival Analysis:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! Please:
 1. Fork the repository
@@ -376,13 +376,13 @@ Contributions welcome! Please:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-## 📚 Citation
+## Citation
 
 If you use this pipeline in your research, please cite:
 ```bibtex
@@ -401,7 +401,7 @@ Data from: The Cancer Genome Atlas (TCGA) via cBioPortal
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **TCGA** for providing open-access cancer genomics data
 - **cBioPortal** for excellent API and data hosting
@@ -409,13 +409,9 @@ Data from: The Cancer Genome Atlas (TCGA) via cBioPortal
 
 ---
 
-## 📧 Contact
+## Contact
 
 **Daniel Lee**  
 MS Bioinformatics Student, Northeastern University  
-📧 lee.daniel1@northeastern.edu  
-🔗 [LinkedIn](https://www.linkedin.com/in/daniellee922)
-
----
-
-**⭐ If you find this project useful, please star it on GitHub!**
+Email: lee.daniel1@northeastern.edu  
+Connect with me: [LinkedIn](https://www.linkedin.com/in/daniellee922)

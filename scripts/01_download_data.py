@@ -3,7 +3,6 @@ Download TCGA LUAD data from cBioPortal
 Uses their public API to get mutation and clinical data
 """
 import requests
-import json
 import pandas as pd
 import os
 from time import sleep
@@ -152,7 +151,7 @@ if __name__ == "__main__":
         survival_df.to_csv('data/raw/clinical_patient.csv', index=False)
         print(f"✓ Saved: data/raw/clinical_patient.csv ({len(survival_df)} rows)")
         
-                # Print summary
+        # Print summary
         print("\n" + "="*70)
         print("Data Summary")
         print("="*70)

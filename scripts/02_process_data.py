@@ -6,7 +6,6 @@ and processes it into analysis-ready formats.
 """
 
 import pandas as pd
-import numpy as np
 import os
 import sys
 import json
@@ -19,7 +18,6 @@ from utils.display import (
     print_success, 
     print_info,
     print_summary,
-    print_dataframe_info, 
     print_error
 )
 
@@ -70,13 +68,11 @@ def extract_gene_symbols(mutations_df):
     print_info("Extracting gene symbols from nested data...")
     
     # Parse JSON string and extract the 'hugoGeneSymbol' field
-    # .replace("'", '"') converts Python dict format to valid JSON
     mutations_df['gene_symbol'] = mutations_df['gene'].apply(
         lambda x: json.loads(x.replace("'", '"'))['hugoGeneSymbol']
     )
     
     # Count unique genes
-    # .nunique() = "number of unique values"
     unique_genes = mutations_df['gene_symbol'].nunique()
     print_success(f"Extracted {unique_genes:,} unique gene symbols")
     
@@ -96,18 +92,15 @@ def calculate_tmb(mutations_df):
     print_info("Calculating tumor mutation burden...")
     
     # Group by sample and count mutations
-    # Think: "For each sample, how many mutations does it have?"
     mutation_counts = mutations_df.groupby('sampleId').size()
     
-    # Convert to DataFrame with proper column names
-    # mutation_counts.index = the sample IDs
-    # mutation_counts.values = the counts
+    # Convert to DataFrame
     tmb_df = pd.DataFrame({
         'sampleId': mutation_counts.index,
         'mutation_count': mutation_counts.values
     })
     
-    # Calculate TMB by normalizing by exome size
+    # Calculate TMB
     EXOME_SIZE_MB = 38
     tmb_df['tmb'] = tmb_df['mutation_count'] / EXOME_SIZE_MB
     
@@ -127,36 +120,6 @@ def identify_top_mutated_genes(mutations_df, top_n=20):
     """
     Identify the most frequently mutated genes across all samples.
     
-    BIOLOGICAL CONTEXT:
-    -------------------
-    Driver genes (like TP53, KRAS) are mutated frequently because these mutations
-    help cancer cells grow/survive. Passenger genes are mutated randomly and don't
-    contribute to cancer - they're just "along for the ride."
-    
-    In lung adenocarcinoma, we expect to see:
-    - TP53 (tumor suppressor, ~50% of tumors)
-    - KRAS (growth signaling, ~30%)
-    - STK11, KEAP1, EGFR (10-20% each)
-    
-    PANDAS EXPLANATION:
-    -------------------
-    .groupby('gene_symbol')['sampleId'].nunique()
-    Breaking this down:
-    1. Group mutations by gene
-    2. For each gene, look at the 'sampleId' column
-    3. Count how many UNIQUE samples (nunique = number of unique)
-    
-    Example:
-    gene_symbol    sampleId
-    TP53          SAMPLE1
-    TP53          SAMPLE2
-    TP53          SAMPLE1  (duplicate - same sample)
-    KRAS          SAMPLE1
-    
-    After groupby:
-    TP53    2  (appears in 2 samples)
-    KRAS    1  (appears in 1 sample)
-    
     Args:
         mutations_df (pd.DataFrame): Mutations data
         top_n (int): Number of top genes to return (default: 20)
@@ -167,11 +130,9 @@ def identify_top_mutated_genes(mutations_df, top_n=20):
     print_info(f"Identifying top {top_n} mutated genes...")
     
     # Count how many samples each gene is mutated in
-    # Think: "For each gene, in how many different patients is it mutated?"
     gene_frequency = mutations_df.groupby('gene_symbol')['sampleId'].nunique()
     
     # Sort in descending order (most mutated first)
-    # .sort_values(ascending=False) = sort high to low
     gene_frequency = gene_frequency.sort_values(ascending=False)
     
     # Take top N genes
@@ -180,7 +141,6 @@ def identify_top_mutated_genes(mutations_df, top_n=20):
     # Calculate percentage of samples with this mutation
     total_samples = mutations_df['sampleId'].nunique()
     
-    # Create a nice DataFrame
     top_genes_df = pd.DataFrame({
         'gene_symbol': top_genes.index,
         'sample_count': top_genes.values,
@@ -188,10 +148,9 @@ def identify_top_mutated_genes(mutations_df, top_n=20):
     })
     
     # Reset index so gene_symbol becomes a regular column
-    # (otherwise it's stored as the "index" which can be confusing)
     top_genes_df = top_genes_df.reset_index(drop=True)
     
-    # Print top 10 for inspection
+    # Print top 10
     print_info("Top 10 most frequently mutated genes:")
     for idx, row in top_genes_df.head(10).iterrows():
         print_info(f"  {row['gene_symbol']}: {row['sample_count']} samples ({row['percentage']}%)")
@@ -204,44 +163,7 @@ def identify_top_mutated_genes(mutations_df, top_n=20):
 def create_mutation_matrix(mutations_df, top_genes):
     """
     Create a binary mutation matrix (samples × genes).
-    
-    BIOLOGICAL CONTEXT:
-    -------------------
-    This creates a "mutation profile" for each sample. Each row is a patient,
-    each column is a gene, and each cell is 1 (mutated) or 0 (not mutated).
-    
-    This lets us visualize the mutation landscape and see patterns:
-    - Which genes are mutated together? (co-occurrence)
-    - Which genes are never mutated together? (mutual exclusivity)
-    - Which samples have similar mutation profiles? (clustering)
-    
-    Example matrix:
-                TP53  KRAS  EGFR
-    SAMPLE1      1     1     0     (has TP53 and KRAS mutations)
-    SAMPLE2      1     0     1     (has TP53 and EGFR mutations)
-    SAMPLE3      0     1     0     (has only KRAS mutation)
-    
-    PANDAS EXPLANATION:
-    -------------------
-    .pivot_table() reshapes data from "long" to "wide" format
-    
-    Long format (what we have):
-    sampleId    gene_symbol
-    SAMPLE1     TP53
-    SAMPLE1     KRAS
-    SAMPLE2     TP53
-    
-    Wide format (what we want):
-                TP53  KRAS
-    SAMPLE1      1     1
-    SAMPLE2      1     0
-    
-    Parameters:
-    - index: what becomes rows (samples)
-    - columns: what becomes column headers (genes)
-    - values: what to put in cells (1 for mutation)
-    - aggfunc: if duplicate entries, how to combine them
-    
+        
     Args:
         mutations_df (pd.DataFrame): Mutations data
         top_genes (list): List of gene symbols to include
@@ -252,7 +174,6 @@ def create_mutation_matrix(mutations_df, top_genes):
     print_info(f"Creating mutation matrix for {len(top_genes)} genes...")
     
     # Filter to only include top genes
-    # .isin(list) checks if each value is in the provided list
     filtered_mutations = mutations_df[mutations_df['gene_symbol'].isin(top_genes)]
     
     print_info(f"  Filtered to {len(filtered_mutations):,} mutations in top genes")
@@ -263,11 +184,11 @@ def create_mutation_matrix(mutations_df, top_genes):
     
     # Pivot to create matrix: samples as rows, genes as columns
     mutation_matrix = filtered_mutations.pivot_table(
-        index='sampleId',           # Rows = samples
-        columns='gene_symbol',       # Columns = genes
-        values='mutated',            # Cell values = 1
-        aggfunc='max',               # If gene mutated multiple times in sample, still just 1
-        fill_value=0                 # If no mutation, fill with 0
+        index='sampleId',
+        columns='gene_symbol',
+        values='mutated',
+        aggfunc='max',
+        fill_value=0
     )
     
     # Ensure all values are 0 or 1 (should already be, but good practice)
@@ -283,31 +204,6 @@ def prepare_survival_data(clinical_patient_df):
     """
     Prepare survival data for Kaplan-Meier analysis.
     
-    BIOLOGICAL CONTEXT:
-    -------------------
-    Survival analysis answers: "How long do patients live after diagnosis?"
-    
-    We need two pieces of information:
-    1. TIME: How long were they followed (in months)?
-    2. EVENT: Did they die (1) or are they still alive/lost to follow-up (0)?
-    
-    "Censored" patients (event=0) are those who:
-    - Are still alive at end of study
-    - Were lost to follow-up
-    - Died of unrelated causes
-    
-    This data lets us create Kaplan-Meier survival curves to compare:
-    - Do TP53-mutated patients survive shorter?
-    - Does high TMB predict better outcomes?
-    
-    PANDAS EXPLANATION:
-    -------------------
-    Working with messy real-world data requires:
-    1. Finding the right columns (names vary by dataset)
-    2. Cleaning values (converting "1:DECEASED" to 1)
-    3. Handling missing data (dropna = drop rows with NaN)
-    4. Type conversion (pd.to_numeric makes strings into numbers)
-    
     Args:
         clinical_patient_df (pd.DataFrame): Patient clinical data
         
@@ -315,20 +211,16 @@ def prepare_survival_data(clinical_patient_df):
         pd.DataFrame: Survival data with columns ['patientId', 'time', 'event']
     """
     print_info("Preparing survival data...")
-    
-    # First, let's see what columns we have
+
     print_info("Available columns:")
     print_info(f"  {', '.join(clinical_patient_df.columns.tolist())}")
     
-    # Look for survival-related columns
-    # Common patterns: OS_MONTHS, OS_STATUS, OVERALL_SURVIVAL, DFS (disease-free survival)
     survival_cols = [col for col in clinical_patient_df.columns 
                      if 'OS' in col or 'SURVIVAL' in col or 'STATUS' in col]
     
     print_info(f"Found potential survival columns: {survival_cols}")
     
-    # Try to identify time and status columns
-    # This is dataset-specific - TCGA typically uses these names
+    # Find status and time columns in TCGA data
     time_col = None
     status_col = None
     
@@ -355,12 +247,9 @@ def prepare_survival_data(clinical_patient_df):
     survival_df.columns = ['patientId', 'time', 'status']
     
     # Clean the data
-    # Convert time to numeric (handles strings like "45.2" or "NA")
     survival_df['time'] = pd.to_numeric(survival_df['time'], errors='coerce')
     
     # Convert status to binary (1 = dead, 0 = alive)
-    # TCGA format is often "1:DECEASED" or "0:LIVING"
-    # We need to extract just the number
     if survival_df['status'].dtype == 'object':  # If it's a string
         # Extract first character if format is "1:DECEASED"
         survival_df['event'] = survival_df['status'].str.split(':').str[0]
@@ -369,7 +258,6 @@ def prepare_survival_data(clinical_patient_df):
         survival_df['event'] = survival_df['status']
     
     # Remove rows with missing data
-    # .dropna() removes any row where time or event is NaN
     survival_df = survival_df[['patientId', 'time', 'event']].dropna()
     
     # Ensure event is binary (0 or 1)
@@ -392,37 +280,6 @@ def integrate_datasets(tmb_df, mutation_matrix, survival_df, clinical_sample_df)
     """
     Merge all datasets into one master DataFrame for analysis.
     
-    BIOLOGICAL CONTEXT:
-    -------------------
-    Real cancer research requires integrating multiple data types:
-    - Molecular (mutations, TMB)
-    - Clinical (survival, stage, demographics)
-    - Outcomes (did patient respond to treatment?)
-    
-    This integration enables questions like:
-    - "In stage III patients, does TP53 mutation predict worse survival?"
-    - "Is high TMB associated with better immunotherapy response?"
-    
-    PANDAS EXPLANATION:
-    -------------------
-    pd.merge() combines DataFrames based on a common column (like JOIN in SQL)
-    
-    Types of merges:
-    - 'inner': Keep only rows that match in both DataFrames
-    - 'left': Keep all rows from left DataFrame
-    - 'outer': Keep all rows from both DataFrames
-    
-    Example:
-    DataFrame A:          DataFrame B:
-    sampleId  tmb        sampleId  stage
-    SAMPLE1   5.2        SAMPLE1   III
-    SAMPLE2   3.1        SAMPLE3   II
-    
-    After merge (inner):
-    sampleId  tmb   stage
-    SAMPLE1   5.2   III
-    (SAMPLE2 and SAMPLE3 dropped - no match)
-    
     Args:
         tmb_df (pd.DataFrame): TMB data
         mutation_matrix (pd.DataFrame): Binary mutation matrix
@@ -434,12 +291,10 @@ def integrate_datasets(tmb_df, mutation_matrix, survival_df, clinical_sample_df)
     """
     print_info("Integrating all datasets...")
     
-    # Start with TMB data
     integrated_df = tmb_df.copy()
     print_info(f"  Starting with {len(integrated_df)} samples from TMB data")
     
     # Add mutation matrix
-    # mutation_matrix has sampleId as index, so we merge on index
     integrated_df = integrated_df.merge(
         mutation_matrix,
         left_on='sampleId',      # Column in integrated_df
@@ -449,9 +304,6 @@ def integrate_datasets(tmb_df, mutation_matrix, survival_df, clinical_sample_df)
     print_info(f"  After adding mutations: {integrated_df.shape}")
     
     # Extract patientId from sampleId
-    # TCGA format: sampleId often contains patientId as prefix
-    # Example: "TCGA-05-4244-01" → patient is "TCGA-05-4244"
-    # We'll take first 12 characters (standard TCGA patient ID length)
     integrated_df['patientId'] = integrated_df['sampleId'].str[:12]
     
     # Add survival data (patient-level)
@@ -464,7 +316,6 @@ def integrate_datasets(tmb_df, mutation_matrix, survival_df, clinical_sample_df)
     print_info(f"  Samples with survival data: {integrated_df['time'].notna().sum()}")
     
     # Add clinical sample data
-    # First, let's see what useful columns are available
     useful_clinical_cols = ['sampleId']
     
     # Look for common clinical variables
@@ -473,7 +324,7 @@ def integrate_datasets(tmb_df, mutation_matrix, survival_df, clinical_sample_df)
         if any(keyword in col_upper for keyword in ['STAGE', 'GRADE', 'AGE', 'GENDER', 'SEX', 'SMOKING']):
             useful_clinical_cols.append(col)
     
-    if len(useful_clinical_cols) > 1:  # If we found useful columns beyond sampleId
+    if len(useful_clinical_cols) > 1:
         print_info(f"  Adding clinical variables: {', '.join(useful_clinical_cols[1:])}")
         integrated_df = integrated_df.merge(
             clinical_sample_df[useful_clinical_cols],
@@ -484,7 +335,6 @@ def integrate_datasets(tmb_df, mutation_matrix, survival_df, clinical_sample_df)
         print_info("  No additional clinical variables found")
     
     # Fill missing mutation values with 0 (no mutation)
-    # Get column names that are gene symbols (from mutation matrix)
     gene_columns = mutation_matrix.columns.tolist()
     integrated_df[gene_columns] = integrated_df[gene_columns].fillna(0).astype(int)
     
@@ -498,19 +348,6 @@ def save_processed_data(tmb_df, mutation_matrix, survival_df, integrated_df, top
     """
     Save all processed data to CSV files.
     
-    BIOLOGICAL CONTEXT:
-    -------------------
-    Saving processed data follows best practices in computational biology:
-    - Raw data stays raw (never modified)
-    - Processed data is saved separately
-    - Reproducibility: anyone can load processed data without rerunning pipeline
-    
-    PANDAS EXPLANATION:
-    -------------------
-    .to_csv() writes a DataFrame to a CSV file
-    - index=False: don't save the row numbers as a column
-    - index=True: save the index (useful when index contains meaningful data)
-    
     Args:
         tmb_df, mutation_matrix, survival_df, integrated_df, top_genes_df: DataFrames to save
     """
@@ -520,7 +357,7 @@ def save_processed_data(tmb_df, mutation_matrix, survival_df, integrated_df, top
     tmb_df.to_csv(f'{PROCESSED_DATA_DIR}/tmb_data.csv', index=False)
     print_success(f"Saved: tmb_data.csv ({len(tmb_df)} samples)")
     
-    # Save mutation matrix (keep index since it's the sampleId)
+    # Save mutation matrix
     mutation_matrix.to_csv(f'{PROCESSED_DATA_DIR}/mutation_matrix.csv', index=True)
     print_success(f"Saved: mutation_matrix.csv ({mutation_matrix.shape[0]} samples × {mutation_matrix.shape[1]} genes)")
     
