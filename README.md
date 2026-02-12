@@ -112,7 +112,7 @@ python scripts/01_download_data.py
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ### Run the Complete Pipeline
 ```bash
@@ -258,7 +258,7 @@ python scripts/03_visualize.py
 
 ---
 
-## 🐳 Docker Usage
+## Docker Usage
 
 ### Build and Run
 ```bash
@@ -289,7 +289,7 @@ docker-compose down
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 ```
 cancer-genomics-analysis/
 ├── config.yaml                 # Configuration file
@@ -348,7 +348,7 @@ Survival Analysis:
 
 ---
 
-## 🧬 Biological Interpretation
+## Biological Interpretation
 
 ### What This Pipeline Reveals
 
@@ -365,34 +365,11 @@ Survival Analysis:
 
 ---
 
-## Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
 ## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
-
-## Citation
-
-If you use this pipeline in your research, please cite:
-```bibtex
-@software{cancer_genomics_pipeline,
-  author = {Daniel Lee},
-  title = {Cancer Genomics Analysis Pipeline},
-  year = {2026},
-  url = {https://github.com/dlee922/cancer-genomics-analysis}
-}
-```
 
 ### Data Citation
 Data from: The Cancer Genome Atlas (TCGA) via cBioPortal
